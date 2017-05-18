@@ -1,0 +1,53 @@
+import boto3
+
+# MACHINE LEARNING
+ml = boto3.client('machinelearning')
+ml_model_id = 'ml-ZWDzEvNtDjn'
+
+def lambda_handler(event, context):
+    try:
+        average_age = 18
+        gender = 'Male'
+        month = 'December'
+        time_of_day = 'Night'
+        county = 'Fulton'
+        state = 'GA'
+        day_of_week = 'Monday'
+        
+        response = get_crime_prediction("https://realtime.machinelearning.us-east-1.amazonaws.com", 
+                average_age, 
+                gender, 
+                month, 
+                time_of_day, 
+                county, 
+                state, 
+                day_of_week)
+                
+        print(response)
+        
+        if response == '0': #no crime
+            print('I see no factors that indicate the likelihood of crime.')
+            return 'I see no factors that indicate the likelihood of crime.'
+        elif response == '1': #yes crime
+            print('I see several factors that indicate the likelihood of crime - be vigilant')
+            return 'I see several factors that indicate the likelihood of crime - be vigilant'
+    except Exception as e:
+        return {"ErrorMessage":e}
+    
+# passes in the values needed and returns the predicted state of crime
+# the Record labels have to match what is displayed on the "Try real-time predictions" screen
+def get_crime_prediction(endpoint_url, average_age, gender, month, time_of_day, county, state, day_of_week):
+    prediction = ml.predict(
+        MLModelId=ml_model_id,
+        Record={
+            'County': county,
+            'State': state,
+            'time_of_day': time_of_day,
+            'gender': gender,
+            'age': str(average_age), #convert int to string
+            'day_of_week': day_of_week,
+            'month': month
+        },
+        PredictEndpoint=endpoint_url)
+    
+    return prediction['Prediction']['predictedLabel']
